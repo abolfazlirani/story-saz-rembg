@@ -4,13 +4,28 @@ import asyncio
 from typing import Optional
 
 import aiohttp
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response
 from rembg import remove
 
 app = FastAPI(title="StorySaz Rembg", version="1.0.0")
 
 REM_BG_TIMEOUT = float(os.getenv("REM_BG_TIMEOUT", "20"))
+REMBG_API_TOKEN = os.getenv("REMBG_API_TOKEN")
+
+def verify_token(request: Request):
+    """Verify API token from request headers."""
+    token = request.headers.get("X-API-Token")
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+    
+    if not REMBG_API_TOKEN:
+        raise HTTPException(status_code=500, detail="API token not configured")
+    
+    if token != REMBG_API_TOKEN:
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
 async def fetch_image(url: str) -> bytes:
     timeout = aiohttp.ClientTimeout(total=REM_BG_TIMEOUT)
@@ -21,7 +36,8 @@ async def fetch_image(url: str) -> bytes:
             return await resp.read()
 
 @app.get("/api/remove")
-async def remove_background(url: Optional[str] = None):
+async def remove_background(request: Request, url: Optional[str] = None):
+    verify_token(request)
     if not url:
         raise HTTPException(status_code=400, detail="url is required")
     try:

@@ -14,7 +14,9 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 Test:
 ```bash
-curl -L "http://localhost:8000/api/remove?url=https://example.com/image.png" --output out.png
+curl -L "http://localhost:8000/api/remove?url=https://example.com/image.png" ^
+  -H "X-API-Token: <your_token>" ^
+  --output out.png
 ```
 
 ## Docker
@@ -26,3 +28,4 @@ docker run -p 8000:8000 --env-file .env story-saz-rembg
 ## Config
 See `.env.example` for tunables:
 - `REM_BG_TIMEOUT` (seconds): HTTP timeout when fetching the source image.
+- `REMBG_API_TOKEN`: shared secret token required via `X-API-Token` header (or `Authorization: Bearer ...`).
